@@ -20,6 +20,7 @@ unsigned long debounceDelay = 50;
 // MIDI
 const byte MIDI_CHANNEL = 0; //* MIDI channel to be used
 const byte MIDI_NOTES[N_BUTTONS] = {0, 12, 24, 36, 48, 60, 72, 84};
+const byte MIDI_PROGRAMS[3] = {0, 1, 2};
 
 void setup() {
   //Serial.begin(115200); 
@@ -34,18 +35,24 @@ void setup() {
 }
 
 void loop() {
-    for (int i = 0; i < N_BUTTONS; i++) {
-      buttonCurrentState[i] = digitalRead(BUTTONS[i]);
-      if ((millis() - lastDebounceTime[i]) > debounceDelay) {
-        if (buttonPrevState[i] != buttonCurrentState[i]) {
-          lastDebounceTime[i] = millis();
-          if(buttonCurrentState[i] == LOW) {
+    for (int index = 0; index < N_BUTTONS; index++) {
+      buttonCurrentState[index] = digitalRead(BUTTONS[index]);
+      if ((millis() - lastDebounceTime[index]) > debounceDelay) {
+        if (buttonPrevState[index] != buttonCurrentState[index]) {
+          lastDebounceTime[index] = millis();
+          if(buttonCurrentState[index] == LOW) {
             //Serial.println(BUTTONS[i]);
-            handleLedStatus(i);
-            handleNote(MIDI_CHANNEL, MIDI_NOTES[i], 64);
-            MidiUSB.flush();       
+            if (index < 5) { 
+              handleNote(MIDI_CHANNEL, MIDI_NOTES[index], 64);
+              MidiUSB.flush();  
+              handleLedStatus(index);
+            }else {
+              handleProgramChange(MIDI_CHANNEL, index);
+              MidiUSB.flush();  
+              handleLedStatusPC(index);
+            }
           }
-          buttonPrevState[i] = buttonCurrentState[i];
+          buttonPrevState[index] = buttonCurrentState[index];
       }
     }
   }
@@ -53,24 +60,27 @@ void loop() {
 
 
 void handleLedStatus(int index) {
-  if (index < 5) {
-    if (buttonStates[index] == false){ 
-      buttonStates[index] = true;
-      digitalWrite(LEDS[index], HIGH);
-    }else {
-      buttonStates[index] = false;
-      digitalWrite(LEDS[index], LOW);
-    }
-  }else {
+  if (buttonStates[index] == false){ 
+    buttonStates[index] = true;
     digitalWrite(LEDS[index], HIGH);
-    delay(100);
-     digitalWrite(LEDS[index], LOW);
-  }  
+  }else {
+    buttonStates[index] = false;
+    digitalWrite(LEDS[index], LOW);
+  }
 }
 
-
+void handleLedStatusPC(int index) {
+  digitalWrite(LEDS[index], HIGH);
+  delay(100);
+  digitalWrite(LEDS[index], LOW);
+}
 
 void handleNote(byte channel, byte pitch, byte velocity) {
   midiEventPacket_t noteOn = {0x09, 0x90 | channel, pitch, velocity};
   MidiUSB.sendMIDI(noteOn);
+}
+
+void handleProgramChange(byte channel, byte program) {
+  midiEventPacket_t pc = {0x0C, 0xC0 | channel, program, 0};
+  MidiUSB.sendMIDI(pc);
 }
