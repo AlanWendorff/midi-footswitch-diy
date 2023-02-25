@@ -53,6 +53,7 @@ void handleFootCommand(int index) {
     }else {
       handleProgramChange(MIDI_CHANNEL, index);
       MidiUSB.flush();
+      handleResetLedsStatus();
       handleLedBlink(index);
     }
   }
@@ -77,6 +78,13 @@ void handleLedBlink(int index) {
   digitalWrite(LEDS[index], HIGH);
   delay(100);
   digitalWrite(LEDS[index], LOW);
+}
+
+void handleResetLedsStatus() {
+  for (int index = 0; index < N_BUTTONS; index++) {
+    btnVirtualRetention[index] = false;
+    digitalWrite(LEDS[index], LOW);
+  }
 }
 
 void handleNote(byte channel, byte pitch, byte velocity) {
