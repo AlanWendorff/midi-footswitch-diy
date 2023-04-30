@@ -121,7 +121,7 @@ void handleExpressionChange(){
     expressionVirtualRetention = false;
   }
 
-  midiEventPacket_t cc = {0x0B, 0xB0 | MIDI_CHANNEL, 0, pitch};
+  midiEventPacket_t cc = {0x0B, 0xB0 | MIDI_CHANNEL, 1, pitch};
   MidiUSB.sendMIDI(cc);
   MidiUSB.flush();
 }
